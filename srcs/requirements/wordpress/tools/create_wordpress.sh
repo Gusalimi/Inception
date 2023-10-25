@@ -1,17 +1,16 @@
-sleep 10
+#!/bin/sh
 
-if [ -f ./wordpress/wp-config.php ]
-then
-	echo "wordpress already downloaded"
-else
+while ! mariadb -h$MYSQL_HOST -u$WP_DATABASE_USR -p$WP_DATABASE_PWD $WP_DATABASE_NAME &>/dev/null; do
+    sleep 3
+done
 
-    wp config create	--allow-root \
-                        --dbname=$SQL_DATABASE \
-                        --dbuser=$SQL_USER \
-                        --dbpass=$SQL_PASSWORD \
-                        --dbhost=mariadb:3306 --path='/var/www/wordpress'
-
-    wp core install
-    wp user create gsaile gsaile@student.42mulhouse.fr --role=author
-
+if [ ! -f "/var/www/html/index.html" ]; then
+    wp core download
+    wp config create --dbname=$WP_DATABASE_NAME --dbuser=$WP_DATABASE_USR --dbpass=$WP_DATABASE_PWD --dbhost=$MYSQL_HOST --dbcharset="utf8" --dbcollate="utf8_general_ci"
+    wp core install --url=$DOMAIN_NAME --title=$WP_TITLE --admin_user=$WP_ADMIN_USR --admin_password=$WP_ADMIN_PWD --admin_email=$WP_ADMIN_EMAIL
+    wp user create $WP_USR $WP_EMAIL --role=author --user_pass=$WP_PWD
+    wp theme install astra --activate
+    wp plugin update --all 
 fi
+
+php-fpm81 --nodaemonize

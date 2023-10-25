@@ -1,22 +1,16 @@
-FROM debian:bullseye
+FROM alpine:3.17
 
-RUN apt update -y && apt upgrade -y && apt install -y wget php php-fpm php-mysql mariadb-client
+RUN apk update && apk upgrade && apk add wget php php-phar php-json php-curl php-fpm php-mysqli php-iconv mariadb-client
 
-RUN wget https://fr.wordpress.org/wordpress-6.0-fr_FR.tar.gz -P /var/www
 
-RUN cd /var/www && tar -xzf wordpress-6.0-fr_FR.tar.gz && rm wordpress-6.0-fr_FR.tar.gz
+RUN	adduser -S nginx && addgroup -S nginx
+COPY conf/www.conf /etc/php81/php-fpm.d/www.conf
 
-COPY conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
+RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+RUN chmod +x wp-cli.phar
+RUN cp wp-cli.phar /usr/bin/wp
 
-RUN	chown -R root:root /var/www/wordpress
+WORKDIR /var/www/html
 
-RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && chmod +x wp-cli.phar && mv wp-cli.phar /usr/local/bin/wp
-
-RUN mkdir -p /run/php
-
-COPY ./tools/create_wordpress.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/create_wordpress.sh
-
-ENTRYPOINT [ "/bin/bash", "/usr/local/bin/create_wordpress.sh" ]
-
-CMD [ "php-fpm7.4", "-F" ]
+COPY tools/create_wordpress.sh /tmp/create_wordpress.sh
+ENTRYPOINT [ "sh", "/tmp/create_wordpress.sh" ]
