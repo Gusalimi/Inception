@@ -14,3 +14,5 @@ clean: down
 	@if [ $$(sudo docker volume ls -q | wc -l) -gt 0 ]; then sudo docker volume rm $$(sudo docker volume ls -q); fi
 	@sudo docker system prune -f
 	@echo "Cleaned"
+
+re: clean up
